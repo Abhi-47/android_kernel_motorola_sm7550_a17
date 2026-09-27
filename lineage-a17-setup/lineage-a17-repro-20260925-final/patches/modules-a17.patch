@@ -1,0 +1,397 @@
+From 83995dfcca99013268ee10aeab4ad897b97a424c Mon Sep 17 00:00:00 2001
+From: Deivy <deivyjas@protonmail.com>
+Date: Thu, 24 Sep 2026 16:38:02 +0000
+Subject: [PATCH 1/3] display: fix pingpong configuration lifetime
+
+---
+ qcom/opensource/display-drivers/msm/sde/sde_rm.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/qcom/opensource/display-drivers/msm/sde/sde_rm.c b/qcom/opensource/display-drivers/msm/sde/sde_rm.c
+index 48206dc..128a25c 100644
+--- a/qcom/opensource/display-drivers/msm/sde/sde_rm.c
++++ b/qcom/opensource/display-drivers/msm/sde/sde_rm.c
+@@ -1101,12 +1101,12 @@ static bool _sde_rm_reserve_pp(
+ 		struct sde_rm_rsvp *rsvp,
+ 		struct sde_rm_requirements *reqs,
+ 		const struct sde_lm_cfg *lm_cfg,
+-		const struct sde_pingpong_cfg *pp_cfg,
+ 		struct sde_rm_hw_blk *lm,
+ 		struct sde_rm_hw_blk **dspp,
+ 		struct sde_rm_hw_blk **ds,
+ 		struct sde_rm_hw_blk **pp)
+ {
++	const struct sde_pingpong_cfg *pp_cfg;
+ 	struct sde_rm_hw_iter iter;
+ 
+ 	sde_rm_init_hw_iter(&iter, 0, SDE_HW_BLK_PINGPONG);
+@@ -1170,7 +1170,6 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
+ 		u32 conn_lm_mask)
+ {
+ 	const struct sde_lm_cfg *lm_cfg = to_sde_hw_mixer(lm->hw)->cap;
+-	const struct sde_pingpong_cfg *pp_cfg;
+ 	bool ret, is_conn_primary, is_conn_secondary;
+ 	u32 lm_primary_pref, lm_secondary_pref, cwb_pref, dcwb_pref;
+ 
+@@ -1253,7 +1252,7 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
+ 		return ret;
+ 
+ 	/* Reserve pp */
+-	ret = _sde_rm_reserve_pp(rm, rsvp, reqs, lm_cfg, pp_cfg, lm,
++	ret = _sde_rm_reserve_pp(rm, rsvp, reqs, lm_cfg, lm,
+ 			dspp, ds, pp);
+ 	if (!ret)
+ 		return ret;
+-- 
+2.43.0
+
+
+From d20e4d8264f1777091400ab3a12dc4510a399a30 Mon Sep 17 00:00:00 2001
+From: Deivy <deivyjas@protonmail.com>
+Date: Thu, 24 Sep 2026 16:38:02 +0000
+Subject: [PATCH 2/3] modules: avoid collisions with kernel minmax macros
+
+---
+ .../goodix_berlin_mmi/goodix_ts_inspect.c     | 10 +++---
+ qcom/opensource/graphics-kernel/kgsl_regmap.c |  4 +--
+ .../variant/iris2/inc/hfi_buffer_iris2.h      | 36 +++++++++----------
+ .../driver/vidc/src/msm_vidc_driver.c         | 10 +++---
+ .../driver/vidc/src/venus_hfi_response.c      |  6 ++--
+ 5 files changed, 33 insertions(+), 33 deletions(-)
+
+diff --git a/motorola/drivers/input/touchscreen/goodix_berlin_mmi/goodix_ts_inspect.c b/motorola/drivers/input/touchscreen/goodix_berlin_mmi/goodix_ts_inspect.c
+index fb494c9..92d1d07 100644
+--- a/motorola/drivers/input/touchscreen/goodix_berlin_mmi/goodix_ts_inspect.c
++++ b/motorola/drivers/input/touchscreen/goodix_berlin_mmi/goodix_ts_inspect.c
+@@ -110,7 +110,7 @@
+ 
+ 
+ #define ABS(val)			((val < 0)? -(val) : val)
+-#define MAX(a, b)			((a > b)? a : b)
++#define GOODIX_MAX(a, b)			((a > b)? a : b)
+ 
+ static bool module_initialized;
+ 
+@@ -1523,25 +1523,25 @@ static void goodix_cache_deltadata(struct goodix_ts_test *ts_test)
+ 			if (j - tx >= 0) {
+ 				temp = ts_test->rawdata[i].data[j - tx];
+ 				temp = ABS(temp - raw);
+-				max_val = MAX(max_val, temp);
++				max_val = GOODIX_MAX(max_val, temp);
+ 			}
+ 			/* calcu delta with bellow node */
+ 			if (j + tx < data_size) {
+ 				temp = ts_test->rawdata[i].data[j + tx];
+ 				temp = ABS(temp - raw);
+-				max_val = MAX(max_val, temp);
++				max_val = GOODIX_MAX(max_val, temp);
+ 			}
+ 			/* calcu delta with left node */
+ 			if (j % tx) {
+ 				temp = ts_test->rawdata[i].data[j - 1];
+ 				temp = ABS(temp - raw);
+-				max_val = MAX(max_val, temp);
++				max_val = GOODIX_MAX(max_val, temp);
+ 			}
+ 			/* calcu delta with right node */
+ 			if ((j + 1) % tx) {
+ 				temp = ts_test->rawdata[i].data[j + 1];
+ 				temp = ABS(temp - raw);
+-				max_val = MAX(max_val, temp);
++				max_val = GOODIX_MAX(max_val, temp);
+ 			}
+ 			ts_test->accord_arr[i].data[j] = max_val * 1000 / raw;
+ 		}
+diff --git a/qcom/opensource/graphics-kernel/kgsl_regmap.c b/qcom/opensource/graphics-kernel/kgsl_regmap.c
+index cfec5e7..f145224 100644
+--- a/qcom/opensource/graphics-kernel/kgsl_regmap.c
++++ b/qcom/opensource/graphics-kernel/kgsl_regmap.c
+@@ -84,7 +84,7 @@ int kgsl_regmap_add_region(struct kgsl_regmap *regmap, struct platform_device *p
+ 	return ret;
+ }
+ 
+-#define in_range(a, base, len) \
++#define kgsl_regmap_in_range(a, base, len) \
+ 	(((a) >= (base)) && ((a) < ((base) + (len))))
+ 
+ struct kgsl_regmap_region *kgsl_regmap_get_region(struct kgsl_regmap *regmap,
+@@ -95,7 +95,7 @@ struct kgsl_regmap_region *kgsl_regmap_get_region(struct kgsl_regmap *regmap,
+ 	for (i = 0; i < regmap->count; i++) {
+ 		struct kgsl_regmap_region *region = &regmap->region[i];
+ 
+-		if (in_range(offset, region->offset, region->size))
++		if (kgsl_regmap_in_range(offset, region->offset, region->size))
+ 			return region;
+ 	}
+ 
+diff --git a/qcom/opensource/video-driver/driver/variant/iris2/inc/hfi_buffer_iris2.h b/qcom/opensource/video-driver/driver/variant/iris2/inc/hfi_buffer_iris2.h
+index 4ed5aa6..b910615 100644
+--- a/qcom/opensource/video-driver/driver/variant/iris2/inc/hfi_buffer_iris2.h
++++ b/qcom/opensource/video-driver/driver/variant/iris2/inc/hfi_buffer_iris2.h
+@@ -18,12 +18,12 @@ typedef s32 HFI_S32;
+ typedef u64 HFI_U64;
+ typedef HFI_U32 HFI_BOOL;
+ 
+-#ifndef MIN
+-#define  MIN(x, y) (((x) < (y)) ? (x) : (y))
++#ifndef IRIS2_MIN
++#define  IRIS2_MIN(x, y) (((x) < (y)) ? (x) : (y))
+ #endif
+ 
+-#ifndef MAX
+-#define  MAX(x, y) (((x) > (y)) ? (x) : (y))
++#ifndef IRIS2_MAX
++#define  IRIS2_MAX(x, y) (((x) > (y)) ? (x) : (y))
+ #endif
+ 
+ #define HFI_ALIGNMENT_4096 (4096)
+@@ -309,7 +309,7 @@ typedef HFI_U32 HFI_BOOL;
+ 		HFI_ALIGN(opb_wr_top_line_luma_buffer_size, \
+ 		VENUS_DMA_ALIGNMENT) + (MAX_TILE_COLUMNS - 1) * 256; \
+ 		opb_wr_top_line_luma_buffer_size = \
+-		MAX(opb_wr_top_line_luma_buffer_size, (32 * \
++		IRIS2_MAX(opb_wr_top_line_luma_buffer_size, (32 * \
+ 			HFI_ALIGN(frame_height, 8))); \
+ 		opb_wr_top_line_chroma_buffer_size = \
+ 			opb_wr_top_line_luma_buffer_size;\
+@@ -370,7 +370,7 @@ typedef HFI_U32 HFI_BOOL;
+ 	{    \
+ 		HFI_U32 _height = HFI_ALIGN(frame_height, \
+ 				BUFFER_ALIGNMENT_32_BYTES);  \
+-		_size = MIN((((_height + 15) >> 4) * 3 * 4), H264D_MAX_SLICE) *\
++		_size = IRIS2_MIN((((_height + 15) >> 4) * 3 * 4), H264D_MAX_SLICE) *\
+ 					  SIZE_H264D_BSE_CMD_PER_BUF; \
+ 	} while (0)
+ 
+@@ -379,7 +379,7 @@ typedef HFI_U32 HFI_BOOL;
+ 	{    \
+ 		HFI_U32 _height = HFI_ALIGN(frame_height, \
+ 				BUFFER_ALIGNMENT_32_BYTES); \
+-		_size = MIN((((_height + 15) >> 4) * 3 * 4), H264D_MAX_SLICE) * \
++		_size = IRIS2_MIN((((_height + 15) >> 4) * 3 * 4), H264D_MAX_SLICE) * \
+ 					SIZE_H264D_VPP_CMD_PER_BUF; \
+ 		if (_size > VPP_CMD_MAX_SIZE) { _size = VPP_CMD_MAX_SIZE; } \
+ 	} while (0)
+@@ -539,9 +539,9 @@ typedef HFI_U32 HFI_BOOL;
+ 	((LCU_MAX_SIZE_PELS / 8 * (128 / 8)) * ((frame_width + 15) >> 4))
+ 
+ #define SIZE_H265D_LB_SE_LEFT_CTRL(frame_width, frame_height)    \
+-	(MAX(((frame_height + 16 - 1) / 8) * \
++	(IRIS2_MAX(((frame_height + 16 - 1) / 8) * \
+ 		MAX_SE_NBR_CTRL_LCU16_LINE_BUFFER_SIZE,     \
+-	MAX(((frame_height + 32 - 1) / 8) * \
++	IRIS2_MAX(((frame_height + 32 - 1) / 8) * \
+ 		MAX_SE_NBR_CTRL_LCU32_LINE_BUFFER_SIZE, \
+ 	((frame_height + 64 - 1) / 8) * \
+ 		MAX_SE_NBR_CTRL_LCU64_LINE_BUFFER_SIZE)))
+@@ -569,7 +569,7 @@ typedef HFI_U32 HFI_BOOL;
+ 		LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS) * \
+ 		(HFI_ALIGN(frame_height, LCU_MAX_SIZE_PELS) /\
+ 		LCU_MIN_SIZE_PELS)) * NUM_HW_PIC_BUF, VENUS_DMA_ALIGNMENT);  \
+-		_size = MIN(_size, H265D_MAX_SLICE + 1);          \
++		_size = IRIS2_MIN(_size, H265D_MAX_SLICE + 1);          \
+ 		_size = 2 * _size * SIZE_H265D_BSE_CMD_PER_BUF;     \
+ 	} while (0)
+ 
+@@ -580,7 +580,7 @@ typedef HFI_U32 HFI_BOOL;
+ 		LCU_MIN_SIZE_PELS) * (HFI_ALIGN(frame_height, \
+ 		LCU_MAX_SIZE_PELS) / LCU_MIN_SIZE_PELS)) * \
+ 		NUM_HW_PIC_BUF, VENUS_DMA_ALIGNMENT);  \
+-		_size = MIN(_size, H265D_MAX_SLICE + 1);    \
++		_size = IRIS2_MIN(_size, H265D_MAX_SLICE + 1);    \
+ 		_size = HFI_ALIGN(_size, 4);  \
+ 		_size = 2 * _size * SIZE_H265D_VPP_CMD_PER_BUF; \
+ 		if (_size > VPP_CMD_MAX_SIZE)      \
+@@ -717,9 +717,9 @@ typedef HFI_U32 HFI_BOOL;
+ 	VENUS_DMA_ALIGNMENT)
+ 
+ #define SIZE_VPXD_LB_FE_LEFT_CTRL(frame_width, frame_height)   \
+-	MAX(((frame_height + 15) >> 4) * \
++	IRIS2_MAX(((frame_height + 15) >> 4) * \
+ 	MAX_FE_NBR_CTRL_LCU16_LINE_BUFFER_SIZE, \
+-	MAX(((frame_height + 31) >> 5) * \
++	IRIS2_MAX(((frame_height + 31) >> 5) * \
+ 	MAX_FE_NBR_CTRL_LCU32_LINE_BUFFER_SIZE, \
+ 	((frame_height + 63) >> 6) * MAX_FE_NBR_CTRL_LCU64_LINE_BUFFER_SIZE))
+ #define SIZE_VPXD_LB_FE_TOP_CTRL(frame_width, frame_height) \
+@@ -727,9 +727,9 @@ typedef HFI_U32 HFI_BOOL;
+ #define SIZE_VPXD_LB_SE_TOP_CTRL(frame_width, frame_height) \
+ 	(((frame_width + 15) >> 4) * MAX_FE_NBR_CTRL_LCU16_LINE_BUFFER_SIZE)
+ #define SIZE_VPXD_LB_SE_LEFT_CTRL(frame_width, frame_height)  \
+-	MAX(((frame_height + 15) >> 4) * \
++	IRIS2_MAX(((frame_height + 15) >> 4) * \
+ 	MAX_SE_NBR_CTRL_LCU16_LINE_BUFFER_SIZE,\
+-	MAX(((frame_height + 31) >> 5) * \
++	IRIS2_MAX(((frame_height + 31) >> 5) * \
+ 	MAX_SE_NBR_CTRL_LCU32_LINE_BUFFER_SIZE, \
+ 	((frame_height + 63) >> 6) * MAX_SE_NBR_CTRL_LCU64_LINE_BUFFER_SIZE))
+ #define SIZE_VPXD_LB_RECON_DMA_METADATA_WR(frame_width, frame_height) \
+@@ -806,11 +806,11 @@ typedef HFI_U32 HFI_BOOL;
+ 		HFI_ALIGN(frame_height, BUFFER_ALIGNMENT_16_BYTES) * 3 / 2;  \
+ 		if (!is_interlaced)  \
+ 		{               \
+-			_size = HFI_ALIGN(((MAX(_size_yuv, \
++			_size = HFI_ALIGN(((IRIS2_MAX(_size_yuv, \
+ 			((BIN_BUFFER_THRESHOLD * 3) >> 1)) * \
+ 			VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO * \
+ 			VPX_DECODER_FRAME_CONCURENCY_LVL) / num_vpp_pipes), \
+-			VENUS_DMA_ALIGNMENT) + HFI_ALIGN(((MAX(_size_yuv, \
++			VENUS_DMA_ALIGNMENT) + HFI_ALIGN(((IRIS2_MAX(_size_yuv, \
+ 			((BIN_BUFFER_THRESHOLD * 3) >> 1)) * \
+ 			VPX_DECODER_FRAME_BIN_RES_BUDGET_RATIO * \
+ 			VPX_DECODER_FRAME_CONCURENCY_LVL) / num_vpp_pipes), \
+@@ -1267,7 +1267,7 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
+ #define SIZE_VPSS_LINE_BUF(num_vpp_pipes_enc, frame_height_coded, \
+ 			frame_width_coded) \
+ 	(HFI_ALIGN(((((((8192) >> 2) << 5) * (num_vpp_pipes_enc)) + 64) + \
+-	(((((MAX((frame_width_coded), (frame_height_coded)) + 3) >> 2) << 5) +\
++	(((((IRIS2_MAX((frame_width_coded), (frame_height_coded)) + 3) >> 2) << 5) +\
+     256) * 16)), VENUS_DMA_ALIGNMENT))
+ 
+ #define SIZE_TOP_LINE_BUF_FIRST_STG_SAO(frame_width_coded) \
+diff --git a/qcom/opensource/video-driver/driver/vidc/src/msm_vidc_driver.c b/qcom/opensource/video-driver/driver/vidc/src/msm_vidc_driver.c
+index dcc6b3f..17c80f8 100644
+--- a/qcom/opensource/video-driver/driver/vidc/src/msm_vidc_driver.c
++++ b/qcom/opensource/video-driver/driver/vidc/src/msm_vidc_driver.c
+@@ -29,7 +29,7 @@
+ extern struct msm_vidc_core *g_core;
+ 
+ #define is_odd(val) ((val) % 2 == 1)
+-#define in_range(val, min, max) (((min) <= (val)) && ((val) <= (max)))
++#define msm_vidc_in_range(val, min, max) (((min) <= (val)) && ((val) <= (max)))
+ #define COUNT_BITS(a, out) {       \
+ 	while ((a) >= 1) {          \
+ 		(out) += (a) & (1); \
+@@ -6676,8 +6676,8 @@ static bool msm_vidc_allow_image_encode_session(struct msm_vidc_inst *inst)
+ 	min_height = capability->cap[FRAME_HEIGHT].min;
+ 	max_height = capability->cap[FRAME_HEIGHT].max;
+ 	fmt = &inst->fmts[INPUT_PORT];
+-	if (!in_range(fmt->fmt.pix_mp.width, min_width, max_width) ||
+-		!in_range(fmt->fmt.pix_mp.height, min_height, max_height)) {
++	if (!msm_vidc_in_range(fmt->fmt.pix_mp.width, min_width, max_width) ||
++		!msm_vidc_in_range(fmt->fmt.pix_mp.height, min_height, max_height)) {
+ 		i_vpr_e(inst, "unsupported wxh [%u x %u], allowed [%u x %u] to [%u x %u]\n",
+ 			fmt->fmt.pix_mp.width, fmt->fmt.pix_mp.height,
+ 			min_width, min_height, max_width, max_height);
+@@ -6793,8 +6793,8 @@ static int msm_vidc_check_resolution_supported(struct msm_vidc_inst *inst)
+ 
+ 	/* check if input width and height is in supported range */
+ 	if (is_decode_session(inst) || is_encode_session(inst)) {
+-		if (!in_range(width, min_width, max_width) ||
+-			!in_range(height, min_height, max_height)) {
++		if (!msm_vidc_in_range(width, min_width, max_width) ||
++			!msm_vidc_in_range(height, min_height, max_height)) {
+ 			i_vpr_e(inst,
+ 				"%s: unsupported input wxh [%u x %u], allowed range: [%u x %u] to [%u x %u]\n",
+ 				__func__, width, height, min_width,
+diff --git a/qcom/opensource/video-driver/driver/vidc/src/venus_hfi_response.c b/qcom/opensource/video-driver/driver/vidc/src/venus_hfi_response.c
+index e80fa12..4d68218 100644
+--- a/qcom/opensource/video-driver/driver/vidc/src/venus_hfi_response.c
++++ b/qcom/opensource/video-driver/driver/vidc/src/venus_hfi_response.c
+@@ -16,7 +16,7 @@
+ #include "msm_vidc_memory.h"
+ #include "msm_vidc_fence.h"
+ 
+-#define in_range(range, val) (((range.begin) < (val)) && ((range.end) > (val)))
++#define vidc_in_range(range, val) (((range.begin) < (val)) && ((range.end) > (val)))
+ 
+ extern struct msm_vidc_core *g_core;
+ struct msm_vidc_core_hfi_range {
+@@ -1993,7 +1993,7 @@ static int handle_system_response(struct msm_vidc_core *core,
+ 					goto exit;
+ 				goto exit;
+ 			}
+-			if (in_range(be[i], packet->type)) {
++			if (vidc_in_range(be[i], packet->type)) {
+ 				rc = be[i].handle(core, packet);
+ 				if (rc)
+ 					goto exit;
+@@ -2039,7 +2039,7 @@ static int __handle_session_response(struct msm_vidc_inst *inst,
+ 					__func__, packet->type);
+ 				handle_session_error(inst, packet);
+ 			}
+-			if (in_range(be[i], packet->type)) {
++			if (vidc_in_range(be[i], packet->type)) {
+ 				dequeue |= (packet->type == HFI_CMD_BUFFER);
+ 				rc = be[i].handle(inst, packet);
+ 				if (rc)
+-- 
+2.43.0
+
+
+From 39be773b296846b4697fd89c0537158777bdd4cf Mon Sep 17 00:00:00 2001
+From: Deivy <deivyjas@protonmail.com>
+Date: Thu, 24 Sep 2026 16:38:03 +0000
+Subject: [PATCH 3/3] wlan: fix compatibility with newer kernel headers
+
+---
+ qcom/opensource/wlan/qca-wifi-host-cmn/hif/src/ce/ce_main.c   | 2 +-
+ qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_talloc.h   | 2 +-
+ .../wlan/qca-wifi-host-cmn/qdf/linux/src/i_qdf_talloc.h       | 2 +-
+ qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_talloc.c   | 4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/qcom/opensource/wlan/qca-wifi-host-cmn/hif/src/ce/ce_main.c b/qcom/opensource/wlan/qca-wifi-host-cmn/hif/src/ce/ce_main.c
+index ba2ccdb..731cfc6 100644
+--- a/qcom/opensource/wlan/qca-wifi-host-cmn/hif/src/ce/ce_main.c
++++ b/qcom/opensource/wlan/qca-wifi-host-cmn/hif/src/ce/ce_main.c
+@@ -2969,7 +2969,7 @@ hif_send_head(struct hif_opaque_softc *hif_ctx,
+ 
+ 	if (qdf_unlikely(!ce_hdl)) {
+ 		hif_err("CE handle is null");
+-		return A_ERROR;
++		return QDF_STATUS_E_FAILURE;
+ 	}
+ 
+ 	QDF_NBUF_UPDATE_TX_PKT_COUNT(nbuf, QDF_NBUF_TX_PKT_HIF);
+diff --git a/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_talloc.h b/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_talloc.h
+index 6bcad1a..3ebd339 100644
+--- a/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_talloc.h
++++ b/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_talloc.h
+@@ -158,7 +158,7 @@ static inline void *__qdf_talloc_fl(const void *parent, const size_t size,
+ static inline void
+ __qdf_tfree_fl(void *ptr, const char *func, const uint16_t line)
+ {
+-	__free(ptr);
++	__qdf_talloc_free(ptr);
+ }
+ 
+ static inline void
+diff --git a/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/linux/src/i_qdf_talloc.h b/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/linux/src/i_qdf_talloc.h
+index 6aa00f6..f089668 100644
+--- a/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/linux/src/i_qdf_talloc.h
++++ b/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/linux/src/i_qdf_talloc.h
+@@ -39,7 +39,7 @@
+ #define __zalloc_auto(size) \
+ 	kzalloc(size, __can_sleep() ? GFP_KERNEL : GFP_ATOMIC)
+ 
+-#define __free(ptr) kfree(ptr)
++#define __qdf_talloc_free(ptr) kfree(ptr)
+ 
+ #define __qdf_alloc_size(ptr) ksize(ptr)
+ 
+diff --git a/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_talloc.c b/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_talloc.c
+index 1a58aa3..cfe3a04 100644
+--- a/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_talloc.c
++++ b/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_talloc.c
+@@ -90,7 +90,7 @@ static void __qdf_free(const void *ptr)
+ {
+ 	qdf_mem_kmalloc_dec(__qdf_alloc_size(ptr));
+ 
+-	__free(ptr);
++	__qdf_talloc_free(ptr);
+ }
+ 
+ static qdf_ht_declare(__qdf_talloc_meta_ht, QDF_TALLOC_HT_BITS);
+@@ -128,7 +128,7 @@ static void qdf_talloc_parent_meta_free(struct qdf_talloc_parent_meta *pmeta)
+ {
+ 	qdf_ht_remove(&pmeta->entry);
+ 	qdf_list_destroy(&pmeta->children);
+-	__free(pmeta);
++	__qdf_talloc_free(pmeta);
+ }
+ 
+ static struct qdf_talloc_parent_meta *
+-- 
+2.43.0
+

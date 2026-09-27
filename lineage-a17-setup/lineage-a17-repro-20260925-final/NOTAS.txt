@@ -1,0 +1,10 @@
+Paquete reproducible de LineageOS 24.0 / Android 17 para Motorola eqe.
+
+Incluye las adaptaciones del kernel, módulos, libheif, WFD, cámara,
+TinyXML2, BufferItemConsumer, OpenEUICC y el manifiesto local.
+
+No incluye build/soong/ui/build/rbe.go porque es un cambio cosmético
+específico del servidor.
+
+No incluye los archivos Awinic sin seguimiento porque son residuos
+generados durante la compilación.

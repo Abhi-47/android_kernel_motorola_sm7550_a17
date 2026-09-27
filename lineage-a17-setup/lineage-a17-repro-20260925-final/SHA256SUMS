@@ -1,0 +1,10 @@
+389353c3d1c74f4ff001daa2dc29361d6d3b1e71c1598dc5a696892727243c61  ./BASES.txt
+e9295c3fc3f6c89e8da82a46350f9332c7c1192c3a5f97a5ab7f2db38018773e  ./files/packages/apps/OpenEUICC/app-deps/maven/Android.bp
+f5e69cd3710799c570015b2c282177e1a563ed4fac502f09fdbb1917668ba646  ./manifest/eqe-a17.xml
+954928a8bfbb24661bcc82607ddfd2422fb0828c56b944b0da8c2dbb1edbf3a5  ./NOTAS.txt
+801648b05a2bba3aeb96417f7e2131249d6d0dc83a6af3399e49889d78a741bc  ./patches/frameworks-av-libheif.patch
+cb63ccbbc2f4d0436f6290a337701f9adad8b947f392aca2b494f3cc283da1c9  ./patches/frameworks-native-a16-abi.patch
+767cab98224683d59325be37305459f4bd712770ab24dc9fa52b8e7d8479aa2f  ./patches/kernel-a17.patch
+84563083ffdbefa87e857c2e4720803f911c031f8918b0099d378e559c57d8da  ./patches/modules-a17.patch
+289cdca47a4ff1c6d883b34f7d87feab8227f224a7b6215189803ac621090ef5  ./patches/vendor-motorola-eqe-Android.bp.patch
+8ae5d0b2d52876cf2577f36d5238b5d457267376989718f9f7c9c8095a9497d8  ./patches/vendor-qcom-wfd-Android.bp.patch

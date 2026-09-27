@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <remote name="dvy-jp" fetch="https://github.com/dvy-jp" />
+
+  <project path="device/motorola/eqe"
+           name="android_device_motorola_eqe"
+           remote="dvy-jp"
+           revision="23c226fc3172b10ac176f9e6d9095b27cc4368ed" />
+
+  <project path="device/qcom/wfd"
+           name="android_device_qcom_wfd"
+           remote="dvy-jp"
+           revision="b67d79b02555919f26869c46dd7c0117f15a9fa9" />
+
+  <project path="hardware/motorola"
+           name="android_hardware_motorola"
+           remote="dvy-jp"
+           revision="ca72d85f4b2ed9dd8f661c4a73c804629931cdb8" />
+
+  <project path="vendor/motorola/eqe"
+           name="proprietary_vendor_motorola_eqe_a17"
+           remote="dvy-jp"
+           revision="refs/tags/a17-ready-v4" />
+
+  <project path="vendor/qcom/wfd"
+           name="proprietary_vendor_qcom_wfd_a17"
+           remote="dvy-jp"
+           revision="refs/tags/a17-ready-v4" />
+
+  <project path="kernel/motorola/sm7550"
+           name="android_kernel_motorola_sm7550_a17"
+           remote="dvy-jp"
+           revision="refs/tags/a17-ready-v4" />
+
+  <project path="kernel/motorola/sm7550-modules"
+           name="android_kernel_motorola_sm7550-modules_a17"
+           remote="dvy-jp"
+           revision="refs/tags/a17-ready-v4" />
+
+  <project path="kernel/motorola/sm7550-devicetrees"
+           name="android_kernel_motorola_sm7550-devicetrees"
+           remote="dvy-jp"
+           revision="64a2cfc58476a597d7573f83b6fad4dc06cf3a3e" />
+  <remote name="openeuicc" fetch="https://github.com/estkme-group/" />
+
+  <project path="packages/apps/OpenEUICC"
+           name="openeuicc"
+           remote="openeuicc"
+           revision="49e498d4cb331d285e084cc3ab0629ae74ff86fc"
+           clone-depth="1"
+           sync-s="true" />
+</manifest>

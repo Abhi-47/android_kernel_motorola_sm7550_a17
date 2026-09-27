@@ -1,0 +1,27 @@
+diff --git a/Android.bp b/Android.bp
+index 2e2e636..2072ff5 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -393,6 +393,8 @@ cc_prebuilt_library_shared {
+                 "libwfdmminterface",
+                 "libwfddisplayconfig",
+                 "libmedia_helper",
++                // Android 17 moved AudioSystem symbols from libaudioclient.
++                "libaudiobase",
+                 "libaudioclient",
+                 "libwfdavenhancements",
+                 "libhidlbase",
+@@ -509,10 +511,12 @@ cc_prebuilt_library_shared {
+                 "libinput",
+                 "libwfdmminterface",
+                 "libmedia_helper",
++                // Android 17 moved AudioSystem symbols from libaudioclient.
++                "libaudiobase",
+                 "libaudioclient",
+                 "libaudiofoundation",
+                 "audioclient-types-aidl-cpp",
+-                "android.media.audio.common.types-V4-cpp",
++                "android.media.audio.common.types-V5-cpp",
+                 "libwfdmmsrc_system",
+                 "libwfdavenhancements",
+                 "libhidlbase",

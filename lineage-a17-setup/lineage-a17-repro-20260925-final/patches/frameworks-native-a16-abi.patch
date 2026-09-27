@@ -1,0 +1,38 @@
+diff --git a/libs/gui/SurfaceComposerClient.cpp b/libs/gui/SurfaceComposerClient.cpp
+index d10624df61..d10e76a01f 100644
+--- a/libs/gui/SurfaceComposerClient.cpp
++++ b/libs/gui/SurfaceComposerClient.cpp
+@@ -1257,6 +1257,15 @@ void SurfaceComposerClient::Transaction::enableDebugLogCallPoints() {
+ 
+ // ---------------------------------------------------------------------------
+ 
++// Keep the Android 16 ABI for proprietary WFD components.
++sp<IBinder> SurfaceComposerClient::createVirtualDisplay(const std::string& displayName,
++                                                        bool isSecure, bool optimizeForPower,
++                                                        const std::string& uniqueId,
++                                                        float requestedRefreshRate) {
++    return createVirtualDisplay(displayName, isSecure, optimizeForPower, uniqueId,
++                                gui::Uid::INVALID.val(), requestedRefreshRate);
++}
++
+ sp<IBinder> SurfaceComposerClient::createVirtualDisplay(const std::string& displayName,
+                                                         bool isSecure, bool optimizeForPower,
+                                                         const std::string& uniqueId, uid_t ownerUid,
+diff --git a/libs/gui/include/gui/SurfaceComposerClient.h b/libs/gui/include/gui/SurfaceComposerClient.h
+index 068c0804e2..566e4972a4 100644
+--- a/libs/gui/include/gui/SurfaceComposerClient.h
++++ b/libs/gui/include/gui/SurfaceComposerClient.h
+@@ -432,6 +432,13 @@ public:
+     sp<SurfaceControl> mirrorDisplay(DisplayId displayId);
+ 
+     static const std::string kEmpty;
++
++    // Compatibility overload for Android 16 vendor blobs.
++    static sp<IBinder> createVirtualDisplay(const std::string& displayName, bool isSecure,
++                                            bool optimizeForPower,
++                                            const std::string& uniqueId,
++                                            float requestedRefreshRate);
++
+     static sp<IBinder> createVirtualDisplay(const std::string& displayName, bool isSecure,
+                                             bool optimizeForPower = true,
+                                             const std::string& uniqueId = kEmpty,

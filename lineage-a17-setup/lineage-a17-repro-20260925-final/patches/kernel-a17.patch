@@ -1,0 +1,39 @@
+From 5c10ebe4a22f626156483f947a7f082915b5887b Mon Sep 17 00:00:00 2001
+From: Deivy <deivyjas@protonmail.com>
+Date: Thu, 24 Sep 2026 16:37:35 +0000
+Subject: [PATCH] kernel: fix uninitialized variables for newer clang
+
+---
+ drivers/input/misc/qcom-hv-haptics.c       | 2 +-
+ drivers/thermal/qcom/cpu_voltage_cooling.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/misc/qcom-hv-haptics.c b/drivers/input/misc/qcom-hv-haptics.c
+index 60f011a27..635599193 100644
+--- a/drivers/input/misc/qcom-hv-haptics.c
++++ b/drivers/input/misc/qcom-hv-haptics.c
+@@ -1067,7 +1067,7 @@ static int haptics_get_status_data(struct haptics_chip *chip,
+ 		"RNAT_RCAL_INT",
+ 		"BRAKE_CAL_SCALAR",
+ 	};
+-	const char *name;
++	const char *name = "UNKNOWN_STATUS";
+ 
+ 	mod_sel_val[0] = sel & 0xff;
+ 	mod_sel_val[1] = (sel >> 8) & 0xff;
+diff --git a/drivers/thermal/qcom/cpu_voltage_cooling.c b/drivers/thermal/qcom/cpu_voltage_cooling.c
+index 6410730d6..95d26a3d5 100644
+--- a/drivers/thermal/qcom/cpu_voltage_cooling.c
++++ b/drivers/thermal/qcom/cpu_voltage_cooling.c
+@@ -178,7 +178,7 @@ static struct cc_limits_data *opp_init(int *cpus)
+ {
+ 	int cpu1, cpu2;
+ 	struct device *cpu1_dev, *cpu2_dev;
+-	struct limits_freq_table *cpu1_freq_table, *cpu2_freq_table;
++	struct limits_freq_table *cpu1_freq_table = NULL, *cpu2_freq_table = NULL;
+ 	struct limits_freq_table *cpu_freq_table[CPU_MAP_CT];
+ 	int table_ct[CPU_MAP_CT], ret = 0;
+ 	struct cc_limits_data *cc_cdev = NULL;
+-- 
+2.43.0
+

@@ -1,0 +1,16 @@
+java_import {
+    name: "OpenEUICC_com.google.zxing_core",
+    jars: ["core-3.4.1.jar"],
+    sdk_version: "current",
+    min_sdk_version: "28",
+}
+
+android_library_import {
+    name: "OpenEUICC_com.journeyapps_zxing-android-embedded",
+    aars: ["zxing-android-embedded-4.3.0.aar"],
+    sdk_version: "current",
+    min_sdk_version: "28",
+    static_libs: [
+        "OpenEUICC_com.google.zxing_core",
+    ],
+}
